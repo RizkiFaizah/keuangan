@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Catatan Keuangan</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1f7a5c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Keuangan">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--bg:#f6f5f1;--surface:#fff;--text:#1d1d1b;--muted:#77756e;--line:#e4e2da;--accent:#1f7a5c;--bubble:#1f7a5c;--bubble-text:#fff;--in:#1f7a5c;--out:#c4452d;--chip:#eef3ef;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141413;--surface:#1f1f1d;--text:#efede6;--muted:#9a978d;--line:#33322e;--accent:#4fb98f;--bubble:#2b6e56;--bubble-text:#fff;--in:#4fb98f;--out:#ef7a63;--chip:#2a2d2a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141413;--surface:#1f1f1d;--text:#efede6;--muted:#9a978d;--line:#33322e;--accent:#4fb98f;--bubble:#2b6e56;--bubble-text:#fff;--in:#4fb98f;--out:#ef7a63;--chip:#2a2d2a;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;max-width:640px;margin:0 auto}
+header{padding:14px 16px 10px}
+h1{font-size:17px;margin:0 0 10px;font-weight:650}
+.sum{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:9px 10px;min-width:0}
+.card small{display:block;color:var(--muted);font-size:11px}
+.card b{font-size:14px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.in{color:var(--in)}.out{color:var(--out)}
+#tog{background:none;border:0;color:var(--accent);font:inherit;font-size:13px;padding:8px 0 0;cursor:pointer}
+#brk{display:none;margin-top:8px}
+#brk.open{display:block}
+.row{display:grid;grid-template-columns:110px 1fr auto;gap:8px;align-items:center;font-size:12.5px;margin:4px 0}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--out);border-radius:4px}
+#feed{flex:1;overflow-y:auto;padding:6px 16px 12px;display:flex;flex-direction:column;gap:6px}
+.day{align-self:center;font-size:11px;color:var(--muted);margin:10px 0 2px}
+.me{align-self:flex-end;background:var(--bubble);color:var(--bubble-text);padding:7px 12px;border-radius:16px 16px 4px 16px;max-width:80%;word-break:break-word}
+.bot{align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:16px 16px 16px 4px;padding:8px 12px;max-width:88%;display:flex;flex-direction:column;gap:6px}
+.amt{font-weight:650;font-size:16px}
+.meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.tag,select{background:var(--chip);color:var(--text);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font:inherit;font-size:12.5px;cursor:pointer}
+.del{margin-left:auto;background:none;border:0;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px}
+.empty{margin:auto;text-align:center;color:var(--muted);padding:20px;font-size:14px}
+.empty code{background:var(--chip);padding:2px 7px;border-radius:6px;display:inline-block;margin:3px}
+form,.bar2{display:flex;gap:8px;padding:10px 16px 12px;border-top:1px solid var(--line);background:var(--bg)}
+input{flex:1;min-width:0;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:999px;padding:11px 16px;font:inherit;font-size:16px;outline:none}
+input:focus{border-color:var(--accent)}
+#send{background:var(--accent);color:#fff;border:0;border-radius:999px;padding:0 18px;font:inherit;font-weight:600;cursor:pointer}
+#err{color:var(--out);font-size:12.5px;padding:0 20px 4px;min-height:0}
+.gsel{border-color:var(--accent);color:var(--accent)}
+.hp{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.ht{font-weight:650;margin-bottom:4px}
+.hn{font-size:12.5px;color:var(--muted);margin:3px 0}
+.gr{margin:8px 0}
+.gr .top{display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.gr .top span:last-child{color:var(--muted);font-size:12px;text-align:right}
+.gr .bar{margin-top:3px}
+.gr .bar i{background:var(--accent)}
+.gr.bad .bar i{background:var(--out)}
+.tip{font-size:12.5px;margin:5px 0;padding-left:10px;border-left:3px solid var(--line)}
+.tip.bad{border-left-color:var(--out)}
+.ct{font-size:12.5px;color:var(--muted);margin:4px 0 6px}
+.xb{background:var(--chip);color:var(--text);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font:inherit;font-size:12.5px;cursor:pointer;margin-top:8px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Catatan Keuangan <span id="mon" style="color:var(--muted);font-weight:400;font-size:13px"></span></h1>
+  <div class="sum">
+    <div class="card"><small>Pemasukan</small><b class="in" id="sIn">Rp0</b></div>
+    <div class="card"><small>Pengeluaran</small><b class="out" id="sOut">Rp0</b></div>
+    <div class="card"><small>Saldo</small><b id="sBal">Rp0</b></div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><button id="tog" type="button">Lihat analisis keuangan ▾</button><span id="exp" style="display:none;gap:6px"><span style="color:var(--muted);font-size:12.5px;margin-top:8px">Ekspor:</span><button class="xb" id="xX" type="button">Excel</button><button class="xb" id="xC" type="button">CSV</button></span></div>
+  <div id="brk"></div>
+</header>
+<div id="feed"></div>
+<div id="err"></div>
+<form id="f" autocomplete="off">
+  <input id="inp" placeholder="mis. nasi goreng 15.000 atau gaji 5jt" enterkeyhint="send">
+  <button id="send">Kirim</button>
+</form>
+<script src="xlsx.full.min.js"></script>
+<script>
+const EXP={"Makanan & Minuman":["makan","nasi","mie","mi","bakso","kopi","ayam","sate","soto","minum","jajan","snack","warteg","resto","gofood","grabfood","sarapan","teh","roti","es","boba","burger","pizza","martabak","gorengan","lunch","dinner","bubur","gado","ikan","seblak","cilok","kue","susu","galon"],
+"Transportasi":["ojek","grab","gojek","bensin","parkir","tol","bus","transjakarta","tije","krl","mrt","lrt","kereta","angkot","taksi","taxi","maxim","pertamax","pertalite","bbm","tiket"],
+"Belanja":["belanja","baju","sepatu","shopee","tokopedia","skincare","tas","celana","jaket","lazada","tiktokshop","kosmetik","indomaret","alfamart"],
+"Tagihan":["listrik","air","pdam","wifi","internet","pulsa","kuota","kos","kosan","sewa","cicilan","token","bpjs","asuransi","pajak","laundry"],
+"Kesehatan":["obat","dokter","vitamin","apotek","gym","klinik","rumah sakit","masker","periksa"],
+"Hiburan":["nonton","bioskop","netflix","spotify","game","jalan","wisata","konser","youtube","liburan","karaoke"]};
+const INC={"Gaji":["gaji","salary","honor","upah"],"Bonus":["bonus","thr","insentif","komisi"],"Hadiah & Transfer":["dikasih","transfer","hadiah","kado","angpao","terima","cashback","refund","dapat"],"Usaha":["jual","jualan","untung","proyek","freelance","dividen"]};
+const OTHER_E="Lainnya",OTHER_I="Pemasukan Lain";
+const $=id=>document.getElementById(id);
+let items=[],learn={};
+const rp=n=>"Rp"+Math.round(n).toLocaleString("id-ID");
+try{items=JSON.parse(localStorage.getItem("kj_items")||"[]");learn=JSON.parse(localStorage.getItem("kj_learn")||"{}")}catch(e){}
+function save(){try{localStorage.setItem("kj_items",JSON.stringify(items));localStorage.setItem("kj_learn",JSON.stringify(learn))}catch(e){}}
+
+function parseAmount(t){
+  const re=/(\d[\d.,]*)\s*(rb|ribu|k|jt|juta)?(?![a-z])/gi;let m,last=null;
+  while((m=re.exec(t))!==null)last=m;
+  if(!last)return null;
+  let raw=last[1].replace(/[.,]+$/,""),suf=(last[2]||"").toLowerCase(),v;
+  if(suf){v=parseFloat(raw.replace(/\./g,"").replace(",","."));v*=(suf==="jt"||suf==="juta")?1e6:1e3}
+  else if(/^\d{1,3}([.,]\d{3})+$/.test(raw))v=parseFloat(raw.replace(/[.,]/g,""));
+  else v=parseFloat(raw.replace(",","."));
+  if(!isFinite(v)||v<=0)return null;
+  return{value:v,desc:(t.slice(0,last.index)+" "+t.slice(last.index+last[0].length)).replace(/\s+/g," ").replace(/\b(rp|idr)\.?\s*$/i,"").replace(/^\s*[+\-]\s*/,"").trim()};
+}
+function match(tokens,map){
+  for(const c in map)for(const k of map[c])for(const t of tokens)if(t===k||(k.length>=4&&t.startsWith(k)))return c;
+  return null;
+}
+function classify(text,desc){
+  const low=desc.toLowerCase(),tokens=low.split(/[^a-z]+/).filter(Boolean);
+  const plus=/^\s*\+/.test(text);
+  if(learn[low])return learn[low];
+  let inc=match(tokens,INCALL);
+  if(plus||inc)return{type:"in",cat:inc||OTHER_I};
+  return{type:"out",cat:match(tokens,EXPALL)||OTHER_E};
+}
+function add(text){
+  const p=parseAmount(text);
+  if(!p)return false;
+  const c=classify(text,p.desc);
+  const cl=c.type?c:{type:"out",cat:c};
+  const lowd=p.desc.toLowerCase();
+  let type=cl.type,cat=cl.cat;
+  let grp;if(learn[lowd]){type=learn[lowd].type;cat=learn[lowd].cat;grp=learn[lowd].grp}
+  items.push({id:Date.now()+Math.random(),text,desc:p.desc||(type==="in"?"Pemasukan":"Pengeluaran"),amount:p.value,type,cat,grp,ts:Date.now()});
+  save();return true;
+}
+function dayKey(ts){return new Date(ts).toDateString()}
+function dayLabel(ts){
+  const d=new Date(ts),t=new Date();
+  if(d.toDateString()===t.toDateString())return"Hari ini";
+  const y=new Date();y.setDate(t.getDate()-1);
+  if(d.toDateString()===y.toDateString())return"Kemarin";
+  return d.toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long"});
+}
+const MOVE=["kopi","jajan","snack","boba","burger","pizza","martabak","gorengan","cilok","seblak","kue","resto","gofood","grabfood","es","teh"];
+EXP["Makanan & Minuman"]=EXP["Makanan & Minuman"].filter(k=>!MOVE.includes(k));
+EXP["Tagihan"]=EXP["Tagihan"].filter(k=>k!=="cicilan");
+INC.Usaha=INC.Usaha.filter(k=>k!=="dividen");
+const EXPALL=Object.assign({"Tabungan & Investasi":["nabung","tabung","tabungan","investasi","reksadana","saham","emas","deposito","bareksa","ajaib","kripto","crypto","darurat","obligasi","sbn"],"Cicilan & Utang":["cicilan","kredit","utang","hutang","pinjol","paylater","spaylater","angsuran","kpr","cc"]},EXP,{"Jajan & Kafe":[...MOVE,"cafe","kafe","starbucks","nongkrong","dessert"]});
+const INCALL=Object.assign({"Investasi":["dividen","bunga","return","profit","cuan"]},INC);
+const GROUPS={"Kebutuhan":["Makanan & Minuman","Transportasi","Tagihan","Kesehatan"],"Keinginan":["Jajan & Kafe","Belanja","Hiburan","Lainnya"],"Tabungan & Investasi":["Tabungan & Investasi"],"Cicilan & Utang":["Cicilan & Utang"]};
+const CATGROUP={};Object.entries(GROUPS).forEach(([g,cs])=>cs.forEach(c=>CATGROUP[c]=g));
+const INGROUP={"Gaji":"Aktif","Bonus":"Aktif","Usaha":"Aktif","Hadiah & Transfer":"Pasif & Lainnya","Investasi":"Pasif & Lainnya","Pemasukan Lain":"Pasif & Lainnya"};
+const EXPG=Object.keys(GROUPS),INGS=["Aktif","Pasif & Lainnya"];
+const TGT={"Kebutuhan":{max:50},"Keinginan":{max:30},"Tabungan & Investasi":{min:20},"Cicilan & Utang":{max:30}};
+function grpOf(i){return i.grp||(i.type==="in"?INGROUP[i.cat]:CATGROUP[i.cat])||(i.type==="in"?"Pasif & Lainnya":"Keinginan")}
+function el(t,c,x){const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function health(brk,mi,tin){
+  const g={};EXPG.forEach(k=>g[k]=0);
+  mi.filter(i=>i.type==="out").forEach(i=>{const k=grpOf(i);g[k]=(g[k]||0)+i.amount});
+  const tout=Object.values(g).reduce((a,b)=>a+b,0);
+  const box=el("div","hp");
+  box.append(el("div","ht","Kesehatan keuangan bulan ini"));
+  if(!tin)box.append(el("div","hn","Catat pemasukan bulan ini supaya persentase terhadap pendapatan bisa dihitung."));
+  const tips=[];
+  EXPG.forEach(k=>{
+    const v=g[k],t=TGT[k],pct=tin?v/tin*100:null;
+    const bad=pct!==null&&((t.max&&pct>t.max)||(t.min&&pct<t.min));
+    const row=el("div","gr"+(bad?" bad":""));
+    const top=el("div","top");
+    top.append(el("span",null,(pct===null?"":bad?"⚠️ ":"✅ ")+k),el("span",null,rp(v)+(pct===null?"":" · "+Math.round(pct)+"%")+" · target "+(t.max?"≤"+t.max:"≥"+t.min)+"%"));
+    const bar=el("div","bar"),i=el("i");i.style.width=(pct===null?0:Math.min(100,pct))+"%";bar.append(i);
+    row.append(top,bar);box.append(row);
+    if(bad){
+      const p=Math.round(pct);
+      if(k==="Kebutuhan")tips.push("Kebutuhan memakan "+p+"% pemasukan. Tinjau lagi tagihan dan biaya makan.");
+      if(k==="Keinginan")tips.push("Keinginan "+p+"% dari pemasukan. Coba kurangi jajan, belanja, atau hiburan.");
+      if(k==="Tabungan & Investasi")tips.push("Tabungan & investasi baru "+p+"%. Sisihkan di awal bulan, bukan dari sisa.");
+      if(k==="Cicilan & Utang")tips.push("Cicilan & utang "+p+"% dari pemasukan. Hindari menambah utang baru.");
+    }
+  });
+  if(tin){
+    const sisa=tin-tout;
+    box.append(el("div","hn",sisa>=0?"Sisa belum dialokasikan: "+rp(sisa):"Defisit bulan ini: "+rp(-sisa)));
+    if(sisa<0)tips.unshift("Pengeluaran melebihi pemasukan sebesar "+rp(-sisa)+".");
+    const ag={Aktif:0,"Pasif & Lainnya":0};
+    mi.filter(i=>i.type==="in").forEach(i=>{const k=grpOf(i);ag[k]=(ag[k]||0)+i.amount});
+    box.append(el("div","hn","Pemasukan aktif "+rp(ag.Aktif)+" · pasif & lainnya "+rp(ag["Pasif & Lainnya"]||0)));
+    if(!tips.length)tips.push("Semua rasio masih dalam acuan 50/30/20. Pertahankan.");
+    tips.forEach(t=>box.append(el("div","tip"+(tips.length&&t.startsWith("Semua")?"":" bad"),t)));
+  }
+  box.append(el("div","hn","Acuan umum aturan 50/30/20 (cicilan maks. 30%), bukan nasihat keuangan. Kelompok tiap catatan bisa kamu ubah."));
+  brk.append(box,el("div","ct","Pengeluaran per kategori"));
+}
+function render(){
+  const now=new Date(),mi=items.filter(i=>{const d=new Date(i.ts);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()});
+  const tin=mi.filter(i=>i.type==="in").reduce((a,b)=>a+b.amount,0),tout=mi.filter(i=>i.type==="out").reduce((a,b)=>a+b.amount,0);
+  $("mon").textContent="· "+now.toLocaleDateString("id-ID",{month:"long",year:"numeric"});
+  $("sIn").textContent=rp(tin);$("sOut").textContent=rp(tout);
+  const bal=tin-tout;$("sBal").textContent=(bal<0?"-":"")+rp(Math.abs(bal));$("sBal").className=bal<0?"out":"";
+  // breakdown
+  const by={};mi.filter(i=>i.type==="out").forEach(i=>by[i.cat]=(by[i.cat]||0)+i.amount);
+  const ents=Object.entries(by).sort((a,b)=>b[1]-a[1]);
+  const brk=$("brk");brk.textContent="";health(brk,mi,tin);
+  if(!ents.length){const p=document.createElement("div");p.className="empty";p.textContent="Belum ada pengeluaran bulan ini.";brk.append(p)}
+  ents.forEach(([c,v])=>{
+    const r=document.createElement("div");r.className="row";
+    const a=document.createElement("span");a.textContent=c;
+    const b=document.createElement("div");b.className="bar";const i=document.createElement("i");i.style.width=Math.max(3,v/tout*100)+"%";b.append(i);
+    const s=document.createElement("span");s.textContent=rp(v)+" ("+Math.round(v/tout*100)+"%)";
+    r.append(a,b,s);brk.append(r);
+  });
+  // feed
+  const feed=$("feed");feed.textContent="";
+  if(!items.length){
+    const e=document.createElement("div");e.className="empty";
+    e.innerHTML="Ketik pengeluaran atau pemasukan seperti chat biasa:<br><code>nasi goreng 15.000</code><code>grab ke kantor 32rb</code><code>gaji 5jt</code><code>+ dikasih ibu 200k</code>";
+    feed.append(e);
+  }
+  let lastDay="";
+  items.forEach(it=>{
+    const dk=dayKey(it.ts);
+    if(dk!==lastDay){const d=document.createElement("div");d.className="day";d.textContent=dayLabel(it.ts);feed.append(d);lastDay=dk}
+    const me=document.createElement("div");me.className="me";me.textContent=it.text;feed.append(me);
+    const bot=document.createElement("div");bot.className="bot";
+    const amt=document.createElement("div");amt.className="amt "+it.type;amt.textContent=(it.type==="in"?"+ ":"− ")+rp(it.amount);
+    const ds=document.createElement("div");ds.textContent=it.desc;
+    const meta=document.createElement("div");meta.className="meta";
+    const tg=document.createElement("button");tg.type="button";tg.className="tag";tg.textContent=it.type==="in"?"Pemasukan":"Pengeluaran";tg.title="Ketuk untuk ganti jenis";
+    tg.onclick=()=>{it.type=it.type==="in"?"out":"in";it.cat=it.type==="in"?OTHER_I:OTHER_E;delete it.grp;learn[it.desc.toLowerCase()]={type:it.type,cat:it.cat};save();render()};
+    const sel=document.createElement("select");
+    const cats=it.type==="in"?[...Object.keys(INCALL),OTHER_I]:Object.values(GROUPS).flat();
+    cats.forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;if(c===it.cat)o.selected=true;sel.append(o)});
+    sel.onchange=()=>{it.cat=sel.value;delete it.grp;learn[it.desc.toLowerCase()]={type:it.type,cat:it.cat};save();render()};
+    const gs=document.createElement("select");gs.className="gsel";gs.title="Kelompok keuangan";
+    (it.type==="in"?INGS:EXPG).forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;if(c===grpOf(it))o.selected=true;gs.append(o)});
+    gs.onchange=()=>{it.grp=gs.value;learn[it.desc.toLowerCase()]={type:it.type,cat:it.cat,grp:it.grp};save();render()};
+    const del=document.createElement("button");del.type="button";del.className="del";del.textContent="✕";del.title="Hapus";
+    del.onclick=()=>{items=items.filter(x=>x.id!==it.id);save();render()};
+    meta.append(tg,sel,gs,del);
+    bot.append(amt,ds,meta);feed.append(bot);
+  });
+  feed.scrollTop=feed.scrollHeight;
+}
+$("tog").onclick=()=>{const o=$("brk").classList.toggle("open");$("tog").textContent=o?"Sembunyikan analisis ▴":"Lihat analisis keuangan ▾"};
+$("f").onsubmit=e=>{
+  e.preventDefault();
+  const v=$("inp").value.trim();if(!v)return;
+  if(add(v)){$("inp").value="";$("err").textContent="";render()}
+  else msg("Nominalnya belum terbaca. Coba tulis seperti: nasi goreng 15000, kopi 20rb, atau gaji 5jt.");
+};
+function msg(t,ok){const e=$("err");e.textContent=t;e.style.color=ok?"var(--accent)":"var(--out)"}
+const dl={async save({filename,data}){
+  const type=filename.endsWith(".xlsx")?"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":"text/csv";
+  const blob=new Blob([data],{type});
+  const file=new File([blob],filename,{type});
+  if(navigator.canShare&&navigator.canShare({files:[file]})&&/Android|iPhone|iPad/i.test(navigator.userAgent)){
+    try{await navigator.share({files:[file],title:filename});return{status:"saved"}}catch(e){if(e&&e.name==="AbortError")throw{code:"declined"}}
+  }
+  const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000);
+  return{status:"saved"};
+}};$("exp").style.display="flex";
+const p2=n=>String(n).padStart(2,"0");
+function today(){const d=new Date();return d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate())}
+function rows(){return items.slice().sort((a,b)=>a.ts-b.ts).map(i=>{const d=new Date(i.ts);return{Tanggal:d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate()),Keterangan:i.desc,Jenis:i.type==="in"?"Pemasukan":"Pengeluaran",Kategori:i.cat,Kelompok:grpOf(i),Nominal:Math.round(i.amount)}})}
+async function doSave(name,data){
+  try{const r=await dl.save({filename:name,data});msg(r.status==="saved"?"File tersimpan: "+name:"File dikirim.",true)}
+  catch(e){msg(e&&e.code==="declined"?"Penyimpanan dibatalkan.":"Ekspor belum bisa dilakukan di tampilan ini.")}
+}
+async function expXlsx(){
+  if(!items.length)return msg("Belum ada catatan untuk diekspor.");
+  if(typeof XLSX==="undefined")return msg("Library Excel gagal dimuat. Coba ekspor CSV.");
+  const r=rows(),wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(r);
+  ws["!cols"]=[{wch:12},{wch:30},{wch:13},{wch:20},{wch:22},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,ws,"Transaksi");
+  const agg={};r.forEach(x=>{const k=x.Tanggal.slice(0,7)+"|"+x.Jenis+"|"+x.Kelompok+"|"+x.Kategori;agg[k]=(agg[k]||0)+x.Nominal});
+  const s=Object.keys(agg).sort().map(k=>{const a=k.split("|");return{Bulan:a[0],Jenis:a[1],Kelompok:a[2],Kategori:a[3],Total:agg[k]}});
+  const ws2=XLSX.utils.json_to_sheet(s);ws2["!cols"]=[{wch:10},{wch:13},{wch:22},{wch:20},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,ws2,"Ringkasan");
+  const buf=XLSX.write(wb,{bookType:"xlsx",type:"array"});
+  await doSave("catatan-keuangan-"+today()+".xlsx",new Blob([buf]));
+}
+function cell(v){v=String(v);return /[",;\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+async function expCsv(){
+  if(!items.length)return msg("Belum ada catatan untuk diekspor.");
+  const h=["Tanggal","Keterangan","Jenis","Kategori","Kelompok","Nominal"];
+  const lines=[h.join(",")].concat(rows().map(x=>h.map(k=>cell(x[k])).join(",")));
+  await doSave("catatan-keuangan-"+today()+".csv","\ufeff"+lines.join("\r\n"));
+}
+$("xX").onclick=expXlsx;$("xC").onclick=expCsv;
+render();
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+if("serviceWorker" in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
