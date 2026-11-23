@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Catatan Keuangan</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#1f7a5c">
@@ -17,7 +17,7 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 @media (prefers-color-scheme:dark){:root{--bg:#0f1512;--surface:#1a211d;--text:#eaf1ec;--muted:#93a099;--line:#2a332d;--accent:#4fd0a0;--in:#4fd0a0;--out:#ff8a73;--chip:#232d27;--bubble:#2b7a5e;--h1:#12382c;--h2:#1f6b53;--sh:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25);color-scheme:dark}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;margin:0}
-body{background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;max-width:640px;margin:0 auto}
+body{background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;max-width:640px;margin:0 auto;position:relative;overflow:hidden}
 button,select,input{font-family:inherit}
 .in{color:var(--in)}.out{color:var(--out)}
 header{padding:14px 16px 6px}
@@ -67,7 +67,7 @@ form{display:flex;gap:8px;padding:8px 16px}
 .tabs button{flex:1;background:none;border:0;color:var(--muted);font-size:11.5px;padding:8px 0 7px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
 .tabs button.on{color:var(--accent);font-weight:650}
 .tabs svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-#err{position:fixed;left:16px;right:16px;bottom:calc(132px + env(safe-area-inset-bottom,0px));max-width:608px;margin:0 auto;background:var(--surface);box-shadow:var(--sh);border-radius:14px;padding:10px 14px;font-size:13px;z-index:5}
+#err{position:absolute;left:16px;right:16px;bottom:128px;background:var(--surface);box-shadow:var(--sh);border-radius:14px;padding:10px 14px;font-size:13px;z-index:5}
 #err:empty{display:none}
 .card,.hp{background:var(--surface);border-radius:18px;padding:13px 14px;margin-bottom:12px;box-shadow:var(--sh)}
 .xp{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -89,6 +89,15 @@ form{display:flex;gap:8px;padding:8px 16px}
 .row{display:grid;grid-template-columns:105px 1fr auto;gap:8px;align-items:center;font-size:12.5px;margin:7px 2px}
 .lg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted);margin:2px 0 4px}
 .lg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px}
+html.kb{padding-bottom:0}
+.kb .tabs{display:none}
+.kb header{padding:8px 16px 2px}
+.kb .hd{margin-bottom:6px}
+.kb .hero{padding:8px 14px;border-radius:16px;display:flex;align-items:center;justify-content:space-between}
+.kb .hero .pills{display:none}
+.kb .hero .bal{font-size:19px;margin:0}
+.kb #err{bottom:74px}
+.view{overscroll-behavior:contain}
 </style>
 </head>
 <body>
@@ -375,6 +384,19 @@ async function expCsv(){
 $("xX").onclick=expXlsx;$("xC").onclick=expCsv;
 function tab(n){["feed","vAn","vCh"].forEach(id=>$(id).classList.toggle("on",id===n));document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===n));$("f").style.display=n==="feed"?"flex":"none";$("err").textContent="";if(n==="feed")$("feed").scrollTop=$("feed").scrollHeight}
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>tab(b.dataset.t));
+(function(){
+  const vv=window.visualViewport,root=document.documentElement,inp=$("inp");
+  const toBottom=()=>{const f=$("feed");if(f.classList.contains("on"))f.scrollTop=f.scrollHeight};
+  function fit(){
+    if(vv){const cs=getComputedStyle(root),pt=parseFloat(cs.paddingTop)||0,pb=parseFloat(cs.paddingBottom)||0;document.body.style.height=Math.max(220,vv.height-pt-pb)+"px";window.scrollTo(0,0)}
+    toBottom();
+  }
+  if(vv){vv.addEventListener("resize",fit);vv.addEventListener("scroll",()=>window.scrollTo(0,0))}
+  inp.addEventListener("focus",()=>{root.classList.add("kb");fit();setTimeout(fit,150);setTimeout(fit,400)});
+  inp.addEventListener("blur",()=>{setTimeout(()=>{if(document.activeElement!==inp){root.classList.remove("kb");fit()}},120)});
+  $("send").addEventListener("pointerdown",e=>e.preventDefault());
+  fit();
+})();
 render();
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 if("serviceWorker" in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register("sw.js").catch(()=>{});
