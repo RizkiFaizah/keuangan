@@ -89,7 +89,7 @@ form{display:flex;gap:8px;padding:8px 16px}
 .row{display:grid;grid-template-columns:105px 1fr auto;gap:8px;align-items:center;font-size:12.5px;margin:7px 2px}
 .lg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted);margin:2px 0 4px}
 .lg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px}
-html.kb{padding-bottom:0}
+html.kb{padding-bottom:var(--kbd,0px)}
 .kb .tabs{display:none}
 .kb header{padding:8px 16px 2px}
 .kb .hd{margin-bottom:6px}
@@ -385,17 +385,36 @@ $("xX").onclick=expXlsx;$("xC").onclick=expCsv;
 function tab(n){["feed","vAn","vCh"].forEach(id=>$(id).classList.toggle("on",id===n));document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===n));$("f").style.display=n==="feed"?"flex":"none";$("err").textContent="";if(n==="feed")$("feed").scrollTop=$("feed").scrollHeight}
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>tab(b.dataset.t));
 (function(){
-  const vv=window.visualViewport,root=document.documentElement,inp=$("inp");
+  const root=document.documentElement,inp=$("inp"),vv=window.visualViewport,vk=navigator.virtualKeyboard;
+  let base=window.innerHeight,focused=false,got=false,timer;
+  if(vk){try{vk.overlaysContent=true}catch(e){}}
   const toBottom=()=>{const f=$("feed");if(f.classList.contains("on"))f.scrollTop=f.scrollHeight};
-  function fit(){
-    if(vv){const cs=getComputedStyle(root),pt=parseFloat(cs.paddingTop)||0,pb=parseFloat(cs.paddingBottom)||0;document.body.style.height=Math.max(220,vv.height-pt-pb)+"px";window.scrollTo(0,0)}
-    toBottom();
+  function apply(p){root.style.setProperty("--kbd",Math.max(0,Math.round(p))+"px");toBottom()}
+  function measure(){
+    if(!focused)return false;
+    let p=null;
+    if(window.innerHeight<base-80)p=0;
+    else{
+      const k=vk&&vk.boundingRect?vk.boundingRect.height:0;
+      if(k>40)p=k;
+      else if(vv){const d=base-vv.height-vv.offsetTop;if(d>80)p=d}
+    }
+    if(p===null)return false;
+    apply(p);return true;
   }
-  if(vv){vv.addEventListener("resize",fit);vv.addEventListener("scroll",()=>window.scrollTo(0,0))}
-  inp.addEventListener("focus",()=>{root.classList.add("kb");fit();setTimeout(fit,150);setTimeout(fit,400)});
-  inp.addEventListener("blur",()=>{setTimeout(()=>{if(document.activeElement!==inp){root.classList.remove("kb");fit()}},120)});
+  inp.addEventListener("focus",()=>{
+    focused=true;got=false;root.classList.add("kb");
+    let n=0;clearInterval(timer);
+    timer=setInterval(()=>{n++;if(measure())got=true;if(n>=8){clearInterval(timer);if(!got)apply(screen.height*0.34)}},70);
+  });
+  inp.addEventListener("blur",()=>{setTimeout(()=>{
+    if(document.activeElement===inp)return;
+    focused=false;clearInterval(timer);root.classList.remove("kb");apply(0);
+  },120)});
+  window.addEventListener("resize",()=>{if(focused)measure();else base=window.innerHeight});
+  if(vv)vv.addEventListener("resize",measure);
+  if(vk)vk.addEventListener("geometrychange",measure);
   $("send").addEventListener("pointerdown",e=>e.preventDefault());
-  fit();
 })();
 render();
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
